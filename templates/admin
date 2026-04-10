@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel Admin — Bonos de Regalo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; font-size: 14px; }
+
+    /* ── Login ── */
+    #pantalla-login {
+      min-height: 100vh;
+      background: #1a1a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 44px 40px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+    .login-logo    { font-size: 32px; margin-bottom: 6px; }
+    .login-titulo  { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+    .login-sub     { font-size: 13px; color: #aaa; margin-bottom: 28px; }
+    .login-label   { display: block; text-align: left; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
+    .login-input {
+      width: 100%; padding: 13px 16px;
+      border: 2px solid #e0e0e0; border-radius: 10px;
+      font-size: 15px; outline: none; margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .login-input:focus { border-color: #1a1a2e; }
+    .login-btn {
+      width: 100%; padding: 14px;
+      background: #1a1a2e; color: white;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-btn:hover { background: #2e3555; }
+    .login-error {
+      background: #fdecea; color: #b71c1c;
+      border: 1px solid #ef9a9a; border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 14px;
+      display: none;
+    }
+    .login-footer { margin-top: 22px; font-size: 12px; color: #ccc; }
+
+    /* ── Panel ── */
+    #pantalla-panel { display: none; min-height: 100vh; display: none; flex-direction: row; }
+
+    .sidebar {
+      width: 230px; background: #1a1a2e; color: white;
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+    }
+    .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-logo .sico  { font-size: 24px; margin-bottom: 4px; }
+    .sidebar-logo .sname { font-size: 15px; font-weight: 800; }
+    .sidebar-logo .ssub  { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .nav { padding: 16px 12px; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 10px; cursor: pointer;
+      color: rgba(255,255,255,0.55); font-size: 13.5px; font-weight: 500;
+      transition: all 0.15s; margin-bottom: 4px; user-select: none;
+    }
+    .nav-item:hover  { background: rgba(255,255,255,0.07); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: white; font-weight: 700; }
+    .nav-item .ico   { font-size: 17px; width: 22px; text-align: center; }
+    .sidebar-footer  { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .btn-logout {
+      width: 100%; padding: 10px;
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6);
+      border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.12); color: white; }
+
+    .main { margin-left: 230px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar {
+      background: white; border-bottom: 1px solid #e8e8e8;
+      padding: 0 28px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 5;
+    }
+    .topbar-title { font-size: 17px; font-weight: 700; color: #1a1a2e; }
+    .topbar-time  { font-size: 12px; color: #aaa; }
+    .content { padding: 28px; }
+
+    /* ── Stats ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card  { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-label { font-size: 12px; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: #1a1a2e; line-height: 1; }
+    .stat-sub   { font-size: 12px; color: #bbb; margin-top: 6px; }
+    .stat-card.green .stat-value { color: #2e7d32; }
+    .stat-card.blue  .stat-value { color: #1565c0; }
+
+    /* ── Secciones ── */
+    .section { display: none; }
+    .section.active { display: block; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .section-header h2 { font-size: 17px; font-weight: 700; color: #1a1a2e; }
+
+    /* ── Tabla ── */
+    .tabla-wrap { background: white; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+    .tabla-filtros { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; align-items: center; }
+    .input-buscar {
+      padding: 8px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px;
+      font-size: 13px; outline: none; width: 240px;
+    }
+    .input-buscar:focus { border-color: #4CAF50; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700;
+      color: #aaa; text-transform: uppercase; letter-spacing: .5px;
+      background: #fafafa; border-bottom: 1px solid #f0f0f0;
+    }
+    td { padding: 13px 16px; border-bottom: 1px solid #f7f7f7; font-size: 13px; color: #333; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafff9; }
+
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge.activo   { background: #e8f5e9; color: #2e7d32; }
+    .badge.inactivo { background: #f5f5f5; color: #999; }
+    .badge.pago     { background: #e3f2fd; color: #1565c0; }
+    .badge.donacion { background: #fce4ec; color: #880e4f; }
+
+    .mono { font-family: monospace; font-size: 12px; background: #f5f5f5; padding: 2px 8px; border-radius: 4px; }
+
+    .btn { padding: 7px 14px; border-radius: 7px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .btn:hover   { opacity: 0.85; }
+    .btn-primary { background: #1a1a2e; color: white; }
+    .btn-green   { background: #4CAF50; color: white; }
+    .btn-blue    { background: #1565c0; color: white; }
+    .btn-outline { background: white; color: #555; border: 1.5px solid #e0e0e0; }
+    .btn-sm      { padding: 5px 10px; font-size: 11px; }
+
+    /* ── Modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 16px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: pop .25s ease; }
+    @keyframes pop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close  { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
+    .modal-body   { padding: 20px 24px; }
+    .modal-footer { padding: 14px 24px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; justify-content: flex-end; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0;
+      border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: #4CAF50; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: #1a1a2e; color: white;
+      padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      display: none; z-index: 999;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .apikey-row { display: flex; align-items: center; gap: 8px; }
+    .apikey-val { font-family: monospace; font-size: 12px; background: #f5f5f5; padding: 4px 10px; border-radius: 6px; filter: blur(4px); cursor: pointer; transition: filter .2s; }
+    .apikey-val.visible { filter: none; }
+    .btn-eye { background: none; border: none; cursor: pointer; font-size: 14px; }
+
+    .empty-state { text-align: center; padding: 48px; color: #bbb; font-size: 14px; }
+    .empty-state .ico { font-size: 40px; margin-bottom: 12px; }
+
+    .tabla-header-strip { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; font-weight: 700; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Login ── -->
+  <div id="pantalla-login">
+    <div class="login-card">
+      <div class="login-logo">🎁</div>
+      <div class="login-titulo">Bonos de Regalo</div>
+      <div class="login-sub">Panel de administración</div>
+
+      <div class="login-error" id="login-error"></div>
+
+      <label class="login-label">Contraseña</label>
+      <input class="login-input" type="password" id="login-pass" placeholder="••••••••"
+             onkeydown="if(event.key==='Enter') hacerLogin()" />
+      <button class="login-btn" onclick="hacerLogin()">Ingresar</button>
+
+      <div class="login-footer">Acceso restringido a administradores</div>
+    </div>
+  </div>
+
+  <!-- ── Panel ── -->
+  <div id="pantalla-panel" style="display:none; width:100%;">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sico">🎁</div>
+        <div class="sname">Bonos de Regalo</div>
+        <div class="ssub">Panel de administración</div>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active" onclick="ir('dashboard')"><span class="ico">📊</span> Dashboard</div>
+        <div class="nav-item" onclick="ir('bonos')"><span class="ico">🎁</span> Bonos</div>
+        <div class="nav-item" onclick="ir('marcas')"><span class="ico">🏪</span> Marcas aliadas</div>
+        <div class="nav-item" onclick="ir('transacciones')"><span class="ico">📋</span> Transacciones</div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="cerrarSesion()">🚪 Cerrar sesión</button>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-time" id="topbar-time"></div>
+      </div>
+
+      <div class="content">
+
+        <!-- Dashboard -->
+        <div class="section active" id="sec-dashboard">
+
+          <!-- Fila 1: Métricas financieras -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;">
+            <div class="stat-card green">
+              <div class="stat-label">💰 Total vendido</div>
+              <div class="stat-value" id="d-vendido">—</div>
+              <div class="stat-sub">valor total emitido</div>
+            </div>
+            <div class="stat-card blue">
+              <div class="stat-label">✅ Total redimido</div>
+              <div class="stat-value" id="d-redimido">—</div>
+              <div class="stat-sub" id="d-tasa">—% de lo vendido</div>
+            </div>
+            <div class="stat-card" style="">
+              <div class="stat-label">🐾 Total donado</div>
+              <div class="stat-value" id="d-donado" style="color:#880e4f;">—</div>
+              <div class="stat-sub">a la causa animal</div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-label">💳 Saldo vivo</div>
+              <div class="stat-value" id="d-saldo">—</div>
+              <div class="stat-sub">aún por redimir</div>
+            </div>
+          </div>
+
+          <!-- Fila 2: Salud de bonos -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;">
+            <div class="stat-card">
+              <div class="stat-label">🎁 Bonos activos</div>
+              <div class="stat-value" id="d-activos">—</div>
+              <div class="stat-sub" id="d-total-bonos">— emitidos en total</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">🆕 Sin usar</div>
+              <div class="stat-value" id="d-sin-usar" style="color:#e65100;">—</div>
+              <div class="stat-sub">saldo intacto</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">⚡ En uso</div>
+              <div class="stat-value" id="d-en-uso" style="color:#1565c0;">—</div>
+              <div class="stat-sub">parcialmente usados</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">🏁 Agotados</div>
+              <div class="stat-value" id="d-agotados" style="color:#555;">—</div>
+              <div class="stat-sub">saldo en cero</div>
+            </div>
+          </div>
+
+          <!-- Fila 3: Hoy + Promedio + Marcas + Distribución -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:16px;margin-bottom:16px;">
+
+            <!-- Hoy -->
+            <div class="tabla-wrap" style="padding:20px;">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#aaa;letter-spacing:.5px;margin-bottom:16px;">📅 Actividad de hoy</div>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div>
+                  <div style="font-size:11px;color:#aaa;margin-bottom:3px;">Transacciones</div>
+                  <div style="font-size:26px;font-weight:800;color:#1a1a2e;" id="d-txn-hoy">—</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#aaa;margin-bottom:3px;">Monto redimido hoy</div>
+                  <div style="font-size:22px;font-weight:700;color:#2e7d32;" id="d-monto-hoy">—</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#aaa;margin-bottom:3px;">Promedio por bono</div>
+                  <div style="font-size:22px;font-weight:700;color:#1565c0;" id="d-promedio">—</div>
+                </div>
+                <div>
+                  <div style="font-size:11px;color:#aaa;margin-bottom:3px;">Marcas aliadas activas</div>
+                  <div style="font-size:22px;font-weight:700;color:#1a1a2e;" id="d-marcas">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distribución saldo -->
+            <div class="tabla-wrap" style="padding:20px;">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#aaa;letter-spacing:.5px;margin-bottom:16px;">📊 Distribución de saldo</div>
+              <div style="display:flex;flex-direction:column;gap:12px;" id="d-dist">
+                <div class="dist-row" data-key="alto"    data-label="Saldo alto (>$75k)"    data-color="#2e7d32"></div>
+                <div class="dist-row" data-key="medio"   data-label="Saldo medio ($25k–$75k)" data-color="#1565c0"></div>
+                <div class="dist-row" data-key="bajo"    data-label="Saldo bajo (<$25k)"    data-color="#e65100"></div>
+                <div class="dist-row" data-key="agotados" data-label="Agotados ($0)"         data-color="#bbb"></div>
+              </div>
+            </div>
+
+            <!-- Top marcas -->
+            <div class="tabla-wrap" style="padding:20px;">
+              <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#aaa;letter-spacing:.5px;margin-bottom:16px;">🏪 Top marcas por volumen</div>
+              <div id="d-top-marcas" style="display:flex;flex-direction:column;gap:10px;">
+                <div style="color:#bbb;font-size:13px;text-align:center;padding:20px;">Sin datos aún</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 4: Últimas transacciones -->
+          <div class="tabla-wrap">
+            <div class="tabla-header-strip">🕐 Últimas transacciones</div>
+            <table>
+              <thead><tr>
+                <th>N.° transacción</th><th>Titular</th><th>Marca</th>
+                <th>Tipo</th><th>Monto</th><th>Saldo anterior</th><th>Saldo nuevo</th><th>Fecha</th>
+              </tr></thead>
+              <tbody id="dash-txn-tbody"><tr><td colspan="8"><div class="empty-state">Cargando...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Bonos -->
+        <div class="section" id="sec-bonos">
+          <div class="section-header">
+            <h2>Bonos de regalo</h2>
+            <button class="btn btn-green" onclick="abrirModalCrearBono()">+ Crear bono</button>
+          </div>
+          <div class="tabla-wrap">
+            <div class="tabla-filtros">
+              <input class="input-buscar" type="text" placeholder="Buscar por código o titular..." oninput="filtrarBonos(this.value)" />
+            </div>
+            <table>
+              <thead><tr>
+                <th>Código</th><th>Titular</th>
+                <th>Saldo inicial</th><th>Saldo actual</th>
+                <th>Estado</th><th>Creado</th><th>Acciones</th>
+              </tr></thead>
+              <tbody id="bonos-tbody"><tr><td colspan="7"><div class="empty-state">Cargando...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Marcas -->
+        <div class="section" id="sec-marcas">
+          <div class="section-header">
+            <h2>Marcas aliadas</h2>
+            <button class="btn btn-green" onclick="abrirModalCrearMarca()">+ Agregar marca</button>
+          </div>
+          <div class="tabla-wrap">
+            <table>
+              <thead><tr>
+                <th>Nombre</th><th>Contacto</th><th>API Key</th>
+                <th>Bonos activos</th><th>Estado</th><th>Creada</th><th>Acciones</th>
+              </tr></thead>
+              <tbody id="marcas-tbody"><tr><td colspan="7"><div class="empty-state">Cargando...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Transacciones -->
+        <div class="section" id="sec-transacciones">
+          <div class="section-header"><h2>Historial de transacciones</h2></div>
+          <div class="tabla-wrap">
+            <div class="tabla-filtros">
+              <input class="input-buscar" type="text" placeholder="Buscar..." oninput="filtrarTxns(this.value)" />
+            </div>
+            <table>
+              <thead><tr>
+                <th>N.° transacción</th><th>Código</th><th>Titular</th><th>Marca</th>
+                <th>Tipo</th><th>Monto</th><th>Saldo ant.</th><th>Saldo nuevo</th><th>Fecha</th>
+              </tr></thead>
+              <tbody id="txns-tbody"><tr><td colspan="9"><div class="empty-state">Cargando...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Crear bono -->
+  <div class="modal-overlay" id="modal-crear-bono">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Crear nuevo bono</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-crear-bono')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Código del bono</label>
+          <input type="text" id="new-codigo" placeholder="Ej: BONO004" style="text-transform:uppercase;" />
+        </div>
+        <div class="form-group">
+          <label>Nombre del titular</label>
+          <input type="text" id="new-nombre" placeholder="Nombre completo" />
+        </div>
+        <div class="form-group">
+          <label>Saldo inicial (COP)</label>
+          <input type="number" id="new-saldo" placeholder="Ej: 100000" min="1000" />
+        </div>
+        <p style="font-size:12px;color:#aaa;margin-top:-6px;">El bono será válido en cualquier marca aliada que esté registrada.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="cerrarModal('modal-crear-bono')">Cancelar</button>
+        <button class="btn btn-green" onclick="crearBono()">Crear bono</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Recargar bono -->
+  <div class="modal-overlay" id="modal-recargar">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Recargar bono <span id="rec-codigo-titulo" style="color:#4CAF50;"></span></h3>
+        <button class="modal-close" onclick="cerrarModal('modal-recargar')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Monto a recargar (COP)</label>
+          <input type="number" id="rec-monto" placeholder="Ej: 50000" min="1000" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="cerrarModal('modal-recargar')">Cancelar</button>
+        <button class="btn btn-blue" onclick="recargarBono()">Recargar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Crear marca -->
+  <div class="modal-overlay" id="modal-crear-marca">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Agregar marca aliada</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-crear-marca')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre de la marca</label>
+          <input type="text" id="marca-nombre" placeholder="Ej: Tienda XYZ" />
+        </div>
+        <div class="form-group">
+          <label>Correo de contacto</label>
+          <input type="email" id="marca-contacto" placeholder="contacto@tienda.com" />
+        </div>
+        <p style="font-size:12px;color:#aaa;margin-top:4px;">Se generará automáticamente una API Key única para esta marca.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="cerrarModal('modal-crear-marca')">Cancelar</button>
+        <button class="btn btn-green" onclick="crearMarca()">Crear marca</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SECCIONES = ["dashboard","bonos","marcas","transacciones"];
+    const TITULOS   = { dashboard:"Dashboard", bonos:"Bonos de regalo", marcas:"Marcas aliadas", transacciones:"Transacciones" };
+    let TOKEN = "";
+    let todosLosBonos = [];
+    let todasLasTxns  = [];
+    let codigoParaRecargar = "";
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    function getToken() { return localStorage.getItem("admin_token") || ""; }
+    function setToken(t){ localStorage.setItem("admin_token", t); TOKEN = t; }
+    function delToken() { localStorage.removeItem("admin_token"); TOKEN = ""; }
+
+    async function hacerLogin() {
+      const pass = document.getElementById("login-pass").value;
+      const err  = document.getElementById("login-error");
+      err.style.display = "none";
+      try {
+        const r = await fetch("/admin/api/login", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ password: pass })
+        });
+        const d = await r.json();
+        if (d.ok) {
+          setToken(d.token);
+          mostrarPanel();
+        } else {
+          err.textContent = d.mensaje || "Contraseña incorrecta.";
+          err.style.display = "block";
+        }
+      } catch(e) {
+        err.textContent = "Error de conexión.";
+        err.style.display = "block";
+      }
+    }
+
+    async function cerrarSesion() {
+      await api("POST", "/admin/api/logout");
+      delToken();
+      location.reload();
+    }
+
+    // ── API helper ────────────────────────────────────────────────────────────
+    async function api(method, url, body) {
+      const opts = {
+        method,
+        headers: { "Content-Type":"application/json", "Authorization": "Bearer " + getToken() }
+      };
+      if (body) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      if (r.status === 401) { delToken(); location.reload(); return null; }
+      return r.json();
+    }
+
+    // ── Arranque ──────────────────────────────────────────────────────────────
+    function mostrarPanel() {
+      document.getElementById("pantalla-login").style.display = "none";
+      document.getElementById("pantalla-panel").style.display = "flex";
+      actualizarReloj();
+      cargarSeccion("dashboard");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      TOKEN = getToken();
+      if (TOKEN) {
+        mostrarPanel();
+      }
+      document.getElementById("login-pass").focus();
+    });
+
+    // ── Reloj ─────────────────────────────────────────────────────────────────
+    function actualizarReloj() {
+      document.getElementById("topbar-time").textContent =
+        new Date().toLocaleString("es-CO", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    }
+    setInterval(actualizarReloj, 30000);
+
+    // ── Toast ─────────────────────────────────────────────────────────────────
+    function mostrarToast(msg, ok = true) {
+      const t = document.getElementById("toast");
+      t.textContent = (ok ? "✓ " : "✕ ") + msg;
+      t.style.background = ok ? "#2e7d32" : "#c62828";
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 3200);
+    }
+
+    // ── Modales ───────────────────────────────────────────────────────────────
+    function abrirModal(id) { document.getElementById(id).classList.add("open"); }
+    function cerrarModal(id){ document.getElementById(id).classList.remove("open"); }
+
+    // ── Navegación ────────────────────────────────────────────────────────────
+    function ir(sec) {
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      document.getElementById("sec-" + sec).classList.add("active");
+      document.querySelectorAll(".nav-item")[SECCIONES.indexOf(sec)].classList.add("active");
+      document.getElementById("topbar-title").textContent = TITULOS[sec];
+      cargarSeccion(sec);
+    }
+
+    function cargarSeccion(sec) {
+      if      (sec === "dashboard")      { cargarStats(); cargarTxnsDash(); }
+      else if (sec === "bonos")          { cargarBonos(); }
+      else if (sec === "marcas")         { cargarMarcas(); }
+      else if (sec === "transacciones")  { cargarTxns(); }
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────────────────
+    function cop(n) { return "$" + Math.round(n).toLocaleString("es-CO"); }
+
+    async function cargarStats() {
+      const d = await api("GET", "/admin/api/stats");
+      if (!d) return;
+
+      // Fila 1: financiero
+      document.getElementById("d-vendido").textContent   = cop(d.total_vendido);
+      document.getElementById("d-redimido").textContent  = cop(d.total_redimido);
+      document.getElementById("d-tasa").textContent      = d.tasa_redencion + "% de lo vendido";
+      document.getElementById("d-donado").textContent    = cop(d.total_donado);
+      document.getElementById("d-saldo").textContent     = cop(d.saldo_circulacion);
+
+      // Fila 2: salud de bonos
+      document.getElementById("d-activos").textContent   = d.bonos_activos;
+      document.getElementById("d-total-bonos").textContent = d.bonos_total + " emitidos en total";
+      document.getElementById("d-sin-usar").textContent  = d.bonos_sin_usar;
+      document.getElementById("d-en-uso").textContent    = d.bonos_en_uso;
+      document.getElementById("d-agotados").textContent  = d.bonos_agotados;
+
+      // Fila 3 col izq: hoy
+      document.getElementById("d-txn-hoy").textContent   = d.transacciones_hoy;
+      document.getElementById("d-monto-hoy").textContent  = cop(d.monto_hoy);
+      document.getElementById("d-promedio").textContent   = cop(d.promedio_por_bono);
+      document.getElementById("d-marcas").textContent     = d.marcas_activas;
+
+      // Distribución de saldo
+      const dist   = d.distribucion_saldo;
+      const total  = d.bonos_activos || 1;
+      document.querySelectorAll(".dist-row").forEach(row => {
+        const key   = row.dataset.key;
+        const label = row.dataset.label;
+        const color = row.dataset.color;
+        const val   = dist[key] || 0;
+        const pct   = Math.round(val / total * 100);
+        row.innerHTML = `
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span style="font-size:12px;color:#555;">${label}</span>
+            <span style="font-size:12px;font-weight:700;color:#1a1a2e;">${val} (${pct}%)</span>
+          </div>
+          <div style="background:#f0f0f0;border-radius:20px;height:8px;overflow:hidden;">
+            <div style="background:${color};height:100%;width:${pct}%;border-radius:20px;transition:width .6s;"></div>
+          </div>`;
+      });
+
+      // Top marcas
+      const tmEl = document.getElementById("d-top-marcas");
+      if (!d.top_marcas || !d.top_marcas.length) {
+        tmEl.innerHTML = '<div style="color:#bbb;font-size:13px;text-align:center;padding:20px;">Sin transacciones aún</div>';
+      } else {
+        const maxMonto = d.top_marcas[0].monto_total || 1;
+        tmEl.innerHTML = d.top_marcas.map((m, i) => `
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+              <span style="font-size:13px;font-weight:600;color:#333;">${i+1}. ${m.nombre}</span>
+              <span style="font-size:12px;color:#555;">${cop(m.monto_total)} · ${m.transacciones} txn</span>
+            </div>
+            <div style="background:#f0f0f0;border-radius:20px;height:8px;overflow:hidden;">
+              <div style="background:#1565c0;height:100%;width:${Math.round(m.monto_total/maxMonto*100)}%;border-radius:20px;transition:width .6s;"></div>
+            </div>
+          </div>`).join("");
+      }
+    }
+
+    async function cargarTxnsDash() {
+      const data = await api("GET", "/admin/api/transacciones");
+      if (!data) return;
+      const tbody = document.getElementById("dash-txn-tbody");
+      if (!data.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="ico">📋</div>Sin transacciones aún</div></td></tr>'; return; }
+      tbody.innerHTML = data.slice(0, 10).map(t => `
+        <tr>
+          <td><span class="mono">${t.id}</span></td>
+          <td>${t.nombre_titular}</td>
+          <td>${t.marca_nombre}</td>
+          <td><span class="badge ${t.tipo}">${t.tipo === "pago" ? "Pago" : "Donación"}</span></td>
+          <td><strong>${cop(t.monto)}</strong></td>
+          <td>${cop(t.saldo_anterior)}</td>
+          <td>${cop(t.saldo_nuevo)}</td>
+          <td>${new Date(t.fecha).toLocaleString("es-CO",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</td>
+        </tr>`).join("");
+    }
+
+    // ── Bonos ─────────────────────────────────────────────────────────────────
+    async function cargarBonos() {
+      const data = await api("GET", "/admin/api/bonos");
+      if (!data) return;
+      todosLosBonos = data;
+      renderBonos(todosLosBonos);
+    }
+
+    function renderBonos(lista) {
+      const tbody = document.getElementById("bonos-tbody");
+      if (!lista.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="ico">🎁</div>Sin bonos aún</div></td></tr>'; return; }
+      tbody.innerHTML = lista.map(b => `
+        <tr>
+          <td><span class="mono">${b.codigo}</span></td>
+          <td>${b.nombre}</td>
+          <td>$${b.saldo_inicial.toLocaleString("es-CO")}</td>
+          <td><strong>$${b.saldo.toLocaleString("es-CO")}</strong></td>
+          <td><span class="badge ${b.status}">${b.status}</span></td>
+          <td>${b.fecha_creacion}</td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-blue btn-sm" onclick="abrirRecargar('${b.codigo}')">Recargar</button>
+            <button class="btn ${b.status==='activo'?'btn-outline':'btn-green'} btn-sm" onclick="toggleBono('${b.codigo}')">
+              ${b.status === "activo" ? "Desactivar" : "Activar"}
+            </button>
+          </td>
+        </tr>`).join("");
+    }
+
+    function filtrarBonos(q) {
+      renderBonos(todosLosBonos.filter(b =>
+        b.codigo.includes(q.toUpperCase()) ||
+        b.nombre.toLowerCase().includes(q.toLowerCase())
+      ));
+    }
+
+    function abrirModalCrearBono() {
+      document.getElementById("new-codigo").value = "";
+      document.getElementById("new-nombre").value = "";
+      document.getElementById("new-saldo").value  = "";
+      abrirModal("modal-crear-bono");
+    }
+
+    async function crearBono() {
+      const d = await api("POST", "/admin/api/bonos/crear", {
+        codigo: document.getElementById("new-codigo").value,
+        nombre: document.getElementById("new-nombre").value,
+        saldo:  document.getElementById("new-saldo").value
+      });
+      if (!d) return;
+      mostrarToast(d.mensaje, d.ok);
+      if (d.ok) { cerrarModal("modal-crear-bono"); cargarBonos(); cargarStats(); }
+    }
+
+    function abrirRecargar(codigo) {
+      codigoParaRecargar = codigo;
+      document.getElementById("rec-codigo-titulo").textContent = codigo;
+      document.getElementById("rec-monto").value = "";
+      abrirModal("modal-recargar");
+    }
+
+    async function recargarBono() {
+      const d = await api("POST", `/admin/api/bonos/${codigoParaRecargar}/recargar`,
+                          { monto: document.getElementById("rec-monto").value });
+      if (!d) return;
+      mostrarToast(d.mensaje, d.ok);
+      if (d.ok) { cerrarModal("modal-recargar"); cargarBonos(); cargarStats(); }
+    }
+
+    async function toggleBono(codigo) {
+      const d = await api("POST", `/admin/api/bonos/${codigo}/toggle`);
+      if (!d) return;
+      if (d.ok) { mostrarToast(`Bono ${codigo} ${d.nuevo_status}.`); cargarBonos(); cargarStats(); }
+    }
+
+    // ── Marcas ────────────────────────────────────────────────────────────────
+    async function cargarMarcas() {
+      const marcas = await api("GET", "/admin/api/marcas");
+      if (!marcas) return;
+      const tbody = document.getElementById("marcas-tbody");
+      if (!marcas.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="ico">🏪</div>Sin marcas aún</div></td></tr>'; return; }
+      tbody.innerHTML = marcas.map(m => `
+        <tr>
+          <td><strong>${m.nombre}</strong></td>
+          <td>${m.contacto || "—"}</td>
+          <td>
+            <div class="apikey-row">
+              <span class="apikey-val" id="key-${m.id}">${m.api_key}</span>
+              <button class="btn-eye" onclick="toggleKey('${m.id}')" title="Mostrar/ocultar">👁</button>
+            </div>
+          </td>
+          <td>${m.bonos_activos}</td>
+          <td><span class="badge ${m.status}">${m.status}</span></td>
+          <td>${m.fecha_creacion}</td>
+          <td>
+            <button class="btn ${m.status==='activo'?'btn-outline':'btn-green'} btn-sm" onclick="toggleMarca('${m.id}')">
+              ${m.status === "activo" ? "Desactivar" : "Activar"}
+            </button>
+          </td>
+        </tr>`).join("");
+    }
+
+    function toggleKey(id) { document.getElementById("key-" + id).classList.toggle("visible"); }
+
+    async function abrirModalCrearMarca() {
+      document.getElementById("marca-nombre").value   = "";
+      document.getElementById("marca-contacto").value = "";
+      abrirModal("modal-crear-marca");
+    }
+
+    async function crearMarca() {
+      const d = await api("POST", "/admin/api/marcas/crear", {
+        nombre:   document.getElementById("marca-nombre").value,
+        contacto: document.getElementById("marca-contacto").value
+      });
+      if (!d) return;
+      if (d.ok) { mostrarToast("Marca creada con éxito."); cerrarModal("modal-crear-marca"); cargarMarcas(); cargarStats(); }
+      else       { mostrarToast("Error al crear la marca.", false); }
+    }
+
+    async function toggleMarca(id) {
+      const d = await api("POST", `/admin/api/marcas/${id}/toggle`);
+      if (!d) return;
+      if (d.ok) { mostrarToast(`Marca ${d.nuevo_status}.`); cargarMarcas(); cargarStats(); }
+    }
+
+    // ── Transacciones ─────────────────────────────────────────────────────────
+    async function cargarTxns() {
+      const data = await api("GET", "/admin/api/transacciones");
+      if (!data) return;
+      todasLasTxns = data;
+      renderTxns(todasLasTxns);
+    }
+
+    function renderTxns(lista) {
+      const tbody = document.getElementById("txns-tbody");
+      if (!lista.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="ico">📋</div>Sin transacciones aún</div></td></tr>'; return; }
+      tbody.innerHTML = lista.map(t => `
+        <tr>
+          <td><span class="mono">${t.id}</span></td>
+          <td><span class="mono">${t.codigo_bono}</span></td>
+          <td>${t.nombre_titular}</td>
+          <td>${t.marca_nombre}</td>
+          <td><span class="badge ${t.tipo}">${t.tipo === "pago" ? "Pago" : "Donación"}</span></td>
+          <td><strong>$${t.monto.toLocaleString("es-CO")}</strong></td>
+          <td>$${t.saldo_anterior.toLocaleString("es-CO")}</td>
+          <td>$${t.saldo_nuevo.toLocaleString("es-CO")}</td>
+          <td>${new Date(t.fecha).toLocaleString("es-CO",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</td>
+        </tr>`).join("");
+    }
+
+    function filtrarTxns(q) {
+      renderTxns(todasLasTxns.filter(t =>
+        t.id.includes(q.toUpperCase()) ||
+        t.codigo_bono.includes(q.toUpperCase()) ||
+        t.nombre_titular.toLowerCase().includes(q.toLowerCase()) ||
+        t.marca_nombre.toLowerCase().includes(q.toLowerCase())
+      ));
+    }
+  </script>
+</body>
+</html>
