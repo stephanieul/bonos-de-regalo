@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rapel en Cascada del Bosque</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .container { width: 100%; max-width: 460px; }
+
+    /* ── Tarjeta del producto ── */
+    .product-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .product-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .product-info { padding: 20px; }
+    .product-name { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+    .product-price { font-size: 26px; font-weight: 800; color: #2e7d32; }
+    .product-currency { font-size: 14px; color: #777; font-weight: 400; margin-left: 4px; }
+
+    /* ── Sección del bono ── */
+    .bono-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .bono-card h2 { font-size: 16px; color: #333; margin-bottom: 16px; font-weight: 600; }
+
+    .input-group { display: flex; gap: 10px; margin-bottom: 16px; }
+    .input-group input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+      text-transform: uppercase;
+    }
+    .input-group input:focus { border-color: #4CAF50; }
+    .input-group button {
+      padding: 12px 18px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .input-group button:hover { background: #388e3c; }
+
+    .alerta {
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+      display: none;
+      margin-bottom: 16px;
+    }
+    .alerta.ok    { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .alerta.error { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+    .alerta .txn-ref {
+      display: block;
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: 0.75;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+    }
+
+    .saldo-box {
+      display: none;
+      background: #f9fbe7;
+      border: 1px solid #c5e1a5;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .saldo-box .saldo-label  { font-size: 13px; color: #558b2f; font-weight: 600; margin-bottom: 4px; }
+    .saldo-box .saldo-valor  { font-size: 22px; font-weight: 800; color: #33691e; }
+    .saldo-box .saldo-nombre { font-size: 13px; color: #777; margin-top: 2px; }
+
+    .btn-pagar {
+      display: none;
+      width: 100%;
+      padding: 14px;
+      background: #1565c0;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 12px;
+    }
+    .btn-pagar:hover { background: #0d47a1; }
+
+    .btn-donar {
+      display: none;
+      width: 100%;
+      padding: 13px;
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-donar:hover { background: #c62828; }
+
+    /* ── Pantalla de comprobante ── */
+    .recibo-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .recibo-overlay.visible { display: flex; }
+
+    .recibo {
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .recibo-header {
+      background: linear-gradient(135deg, #2e7d32, #43a047);
+      color: white;
+      padding: 32px 24px 24px;
+      text-align: center;
+    }
+    .recibo-icono {
+      width: 72px;
+      height: 72px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 36px;
+    }
+    .recibo-titulo {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .recibo-subtitulo {
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    .recibo-body { padding: 24px; }
+
+    .recibo-fila {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px dashed #e0e0e0;
+      gap: 12px;
+    }
+    .recibo-fila:last-child { border-bottom: none; }
+    .recibo-key {
+      font-size: 13px;
+      color: #888;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .recibo-val {
+      font-size: 14px;
+      color: #1a1a2e;
+      font-weight: 600;
+      text-align: right;
+    }
+    .recibo-val.grande {
+      font-size: 18px;
+      color: #2e7d32;
+      font-weight: 800;
+    }
+    .recibo-val.codigo {
+      font-family: monospace;
+      font-size: 15px;
+      background: #f5f5f5;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .recibo-separador {
+      border: none;
+      border-top: 2px dashed #e0e0e0;
+      margin: 4px 0;
+    }
+
+    .recibo-acciones {
+      padding: 0 24px 24px;
+      display: flex;
+      gap: 10px;
+    }
+    .btn-imprimir {
+      flex: 1;
+      padding: 13px;
+      background: #1565c0;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-imprimir:hover { background: #0d47a1; }
+    .btn-cerrar {
+      flex: 1;
+      padding: 13px;
+      background: #f5f5f5;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-cerrar:hover { background: #e0e0e0; }
+
+    /* Donación dentro del recibo */
+    .recibo-donacion {
+      display: none;
+      margin: 0 24px 20px;
+      padding: 14px;
+      background: #fff3e0;
+      border: 1px solid #ffcc80;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .recibo-donacion p { font-size: 13px; color: #e65100; margin-bottom: 10px; line-height: 1.4; }
+    .recibo-donacion button {
+      padding: 10px 20px;
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .recibo-donacion button:hover { background: #c62828; }
+
+    /* ── Pantalla de agradecimiento por donación ── */
+    .donacion-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .donacion-overlay.visible { display: flex; }
+
+    .donacion-card {
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      animation: popIn 0.35s ease;
+      text-align: center;
+    }
+
+    .donacion-imagen {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .donacion-cuerpo {
+      padding: 28px 24px 24px;
+    }
+
+    .donacion-emoji {
+      font-size: 48px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .donacion-titulo {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 14px;
+    }
+
+    .donacion-mensaje {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .donacion-monto {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 8px 20px;
+      border-radius: 30px;
+      margin-bottom: 24px;
+    }
+
+    .btn-donacion-cerrar {
+      width: 100%;
+      padding: 14px;
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-donacion-cerrar:hover { background: #c62828; }
+
+    /* Print styles */
+    @media print {
+      body { background: white; padding: 0; }
+      .recibo-overlay { position: static; background: none; padding: 0; display: block !important; }
+      .recibo { box-shadow: none; max-width: 100%; border-radius: 0; }
+      .recibo-acciones, .recibo-donacion, .bono-card, .product-card { display: none !important; }
+      .donacion-overlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1 style="text-align:center; font-size:26px; font-weight:800; color:#1a1a2e; margin-bottom:20px; letter-spacing:0.5px;">BONOS DE REGALO 🎁</h1>
+
+    <div class="product-card">
+      <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=600" alt="Rapel en Cascada del Bosque" />
+      <div class="product-info">
+        <div class="product-name">Rapel en Cascada del Bosque</div>
+        <div class="product-price">$85.000 <span class="product-currency">COP</span></div>
+      </div>
+    </div>
+
+    <div class="bono-card">
+      <h2>Pagar con bono</h2>
+      <div class="input-group">
+        <input type="text" id="codigo" placeholder="Código del bono" />
+        <button onclick="validar()">Validar bono</button>
+      </div>
+      <div class="alerta" id="alerta"></div>
+      <div class="saldo-box" id="saldo-box">
+        <div class="saldo-label">Saldo disponible</div>
+        <div class="saldo-valor" id="saldo-valor"></div>
+        <div class="saldo-nombre" id="saldo-nombre"></div>
+      </div>
+      <button class="btn-pagar" id="btn-pagar" onclick="pagar()">
+        Pagar $85.000 con este bono
+      </button>
+      <button class="btn-donar" id="btn-donar" onclick="donar()">
+        Donar vuelto al refugio de perritos 🐾
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Comprobante de redención -->
+  <div class="recibo-overlay" id="recibo-overlay">
+    <div class="recibo" id="recibo-contenido">
+      <div class="recibo-header">
+        <div class="recibo-icono">✓</div>
+        <div class="recibo-titulo">¡Redención exitosa!</div>
+        <div class="recibo-subtitulo">Tu pago fue procesado correctamente</div>
+      </div>
+
+      <div class="recibo-body">
+        <div class="recibo-fila">
+          <span class="recibo-key">Producto</span>
+          <span class="recibo-val">Rapel en Cascada del Bosque</span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Valor pagado</span>
+          <span class="recibo-val grande" id="rec-valor"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Código del bono</span>
+          <span class="recibo-val codigo" id="rec-codigo"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Fecha y hora</span>
+          <span class="recibo-val" id="rec-fecha"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Saldo restante</span>
+          <span class="recibo-val" id="rec-saldo"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">N.° transacción</span>
+          <span class="recibo-val codigo" id="rec-transaccion"></span>
+        </div>
+      </div>
+
+      <div class="recibo-donacion" id="recibo-donacion">
+        <p>🐾 Tu saldo restante es menor a $15.000. ¿Quieres donarlo a un refugio de perritos?</p>
+        <button onclick="donar()">Sí, donar al refugio</button>
+      </div>
+
+      <div class="recibo-acciones">
+        <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir / Guardar</button>
+        <button class="btn-cerrar" onclick="cerrarRecibo()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pantalla de agradecimiento por donación -->
+  <div class="donacion-overlay" id="donacion-overlay">
+    <div class="donacion-card">
+      <img class="donacion-imagen"
+           src="https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600"
+           alt="Perritos en refugio" />
+      <div class="donacion-cuerpo">
+        <span class="donacion-emoji">🐾</span>
+        <div class="donacion-titulo">¡Muchas gracias!</div>
+        <p class="donacion-mensaje">
+          Tu aporte nos ayuda a darle una patica a los refugios que necesitan cubrir sus gastos veterinarios y de alimentación.
+        </p>
+        <div class="donacion-monto" id="donacion-monto"></div>
+        <button class="btn-donacion-cerrar" onclick="cerrarDonacion()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRECIO = 85000;
+    let codigoActual = "";
+    let nombreActual = "";
+
+    function mostrarAlerta(mensaje, tipo, numTransaccion) {
+      const el = document.getElementById("alerta");
+      el.innerHTML = mensaje;
+      if (numTransaccion) {
+        el.innerHTML += `<span class="txn-ref">Ref. transacción: ${numTransaccion}</span>`;
+      }
+      el.className = "alerta " + tipo;
+      el.style.display = "block";
+    }
+
+    function ocultarAlerta() {
+      document.getElementById("alerta").style.display = "none";
+    }
+
+    function mostrarSaldo(saldo, nombre) {
+      document.getElementById("saldo-valor").textContent = "$" + saldo.toLocaleString("es-CO");
+      document.getElementById("saldo-nombre").textContent = "Titular: " + nombre;
+      document.getElementById("saldo-box").style.display = "block";
+    }
+
+    function formatearFecha() {
+      const ahora = new Date();
+      const fecha = ahora.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
+      const hora  = ahora.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      return fecha + " — " + hora;
+    }
+
+    function mostrarRecibo(nuevaSaldo, donable, numTransaccion) {
+      document.getElementById("rec-valor").textContent       = "$" + PRECIO.toLocaleString("es-CO") + " COP";
+      document.getElementById("rec-codigo").textContent      = codigoActual;
+      document.getElementById("rec-fecha").textContent       = formatearFecha();
+      document.getElementById("rec-saldo").textContent       = "$" + nuevaSaldo.toLocaleString("es-CO") + " COP";
+      document.getElementById("rec-transaccion").textContent = numTransaccion || "—";
+
+      const donacion = document.getElementById("recibo-donacion");
+      donacion.style.display = donable ? "block" : "none";
+
+      document.getElementById("recibo-overlay").classList.add("visible");
+    }
+
+    function cerrarRecibo() {
+      document.getElementById("recibo-overlay").classList.remove("visible");
+    }
+
+    async function validar() {
+      const codigo = document.getElementById("codigo").value.trim();
+      if (!codigo) { mostrarAlerta("Por favor ingresa un código de bono.", "error"); return; }
+      ocultarAlerta();
+      document.getElementById("btn-pagar").style.display = "none";
+      document.getElementById("btn-donar").style.display = "none";
+      document.getElementById("saldo-box").style.display = "none";
+
+      const res = await fetch("/validar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        codigoActual = data.codigo;
+        nombreActual = data.nombre;
+        mostrarSaldo(data.saldo, data.nombre);
+
+        if (data.saldo < PRECIO) {
+          const falta = PRECIO - data.saldo;
+          mostrarAlerta(`Saldo insuficiente. Te faltan $${falta.toLocaleString("es-CO")} COP para completar el pago.`, "error");
+          document.getElementById("btn-pagar").style.display = "none";
+        } else {
+          ocultarAlerta();
+          document.getElementById("btn-pagar").style.display = "block";
+        }
+      } else {
+        mostrarAlerta(data.mensaje, "error");
+      }
+    }
+
+    async function pagar() {
+      const res = await fetch("/pagar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: codigoActual, valor: PRECIO })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        document.getElementById("btn-pagar").style.display = "none";
+        document.getElementById("saldo-box").style.display = "none";
+        ocultarAlerta();
+        mostrarRecibo(data.nuevo_saldo, data.vuelto_donable, data.num_transaccion);
+      } else {
+        mostrarAlerta(data.mensaje, "error", data.num_transaccion);
+      }
+    }
+
+    async function donar() {
+      const res = await fetch("/donar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: codigoActual })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        document.getElementById("recibo-donacion").style.display = "none";
+        document.getElementById("btn-donar").style.display = "none";
+        document.getElementById("rec-saldo").textContent = "$0 COP";
+        document.getElementById("donacion-monto").textContent =
+          "Donaste $" + data.monto_donado.toLocaleString("es-CO") + " COP";
+        document.getElementById("donacion-overlay").classList.add("visible");
+      } else {
+        mostrarAlerta(data.mensaje, "error");
+      }
+    }
+
+    function cerrarDonacion() {
+      document.getElementById("donacion-overlay").classList.remove("visible");
+      cerrarRecibo();
+    }
+
+    document.getElementById("codigo").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") validar();
+    });
+  </script>
+</body>
+</html>
