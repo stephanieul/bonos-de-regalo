@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout — Aventuras del Bosque</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; color: #1a1a2e; font-size: 14px; }
+
+    /* ── Header ── */
+    .header {
+      background: white;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .logo { font-size: 18px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
+    .logo span { color: #2e7d32; }
+    .secure-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+    .secure-badge svg { width: 14px; height: 14px; fill: #4CAF50; }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      padding: 14px 32px;
+      font-size: 12px;
+      color: #aaa;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .breadcrumb span { color: #333; font-weight: 600; }
+    .breadcrumb .sep { color: #ccc; }
+
+    /* ── Layout ── */
+    .checkout-layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 32px 60px;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 760px) {
+      .checkout-layout { grid-template-columns: 1fr; padding: 0 16px 40px; }
+      .header { padding: 0 16px; }
+      .breadcrumb { padding: 14px 16px; }
+    }
+
+    /* ── Sección izquierda ── */
+    .section {
+      background: white;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title .step {
+      width: 24px; height: 24px;
+      background: #1a1a2e;
+      color: white;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Formulario de contacto/envío */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 12px; color: #777; font-weight: 500; }
+    .form-group input, .form-group select {
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1a1a2e;
+      background: #fafafa;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: #1565c0; background: white; }
+
+    /* ── Métodos de pago ── */
+    .metodos { display: flex; flex-direction: column; gap: 10px; }
+
+    .metodo-item {
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+      cursor: pointer;
+    }
+    .metodo-item.activo { border-color: #1565c0; }
+
+    .metodo-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      user-select: none;
+    }
+
+    .metodo-radio {
+      width: 18px; height: 18px;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s;
+    }
+    .metodo-item.activo .metodo-radio { border-color: #1565c0; }
+    .metodo-item.activo .metodo-radio::after {
+      content: '';
+      width: 8px; height: 8px;
+      background: #1565c0;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .metodo-logo {
+      width: 44px; height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .metodo-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .metodo-logo.tarjeta { background: #f0f4ff; }
+    .metodo-logo.mp { background: #009EE3; color: white; font-size: 13px; }
+    .metodo-logo.bono { background: #e8f5e9; font-size: 20px; }
+
+    .metodo-info { flex: 1; }
+    .metodo-nombre { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .metodo-desc { font-size: 11px; color: #999; margin-top: 1px; }
+
+    .metodo-badges { display: flex; gap: 4px; }
+    .badge-card {
+      background: #f5f5f5;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    /* Contenido expandido del método */
+    .metodo-body {
+      display: none;
+      padding: 0 16px 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .metodo-item.activo .metodo-body { display: block; }
+
+    /* Tarjeta de crédito */
+    .tarjeta-form { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .tarjeta-form input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .tarjeta-form input:focus { border-color: #1565c0; }
+    .tarjeta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Mercado Pago */
+    .mp-content {
+      margin-top: 14px;
+      text-align: center;
+      padding: 20px;
+      background: #f0f9ff;
+      border-radius: 10px;
+    }
+    .mp-logo-grande {
+      font-size: 28px;
+      font-weight: 900;
+      color: #009EE3;
+      margin-bottom: 8px;
+    }
+    .mp-content p { font-size: 13px; color: #555; margin-bottom: 14px; }
+    .mp-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      background: #009EE3;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Bono de regalo inline */
+    .bono-inline { margin-top: 14px; }
+    .bono-intro {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      background: #f9fbe7;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #558b2f;
+      font-weight: 500;
+    }
+    .bono-intro .icono { font-size: 20px; }
+
+    .bono-input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .bono-input-row input {
+      flex: 1;
+      padding: 11px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .bono-input-row input:focus { border-color: #4CAF50; }
+    .bono-input-row button {
+      padding: 11px 18px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .bono-input-row button:hover { background: #388e3c; }
+
+    .bono-alerta {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .bono-alerta.ok    { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .bono-alerta.error { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+    .bono-alerta .txn-ref { display: block; margin-top: 6px; font-size: 11px; opacity: 0.7; font-family: monospace; }
+
+    .bono-saldo-box {
+      display: none;
+      background: #f9fbe7;
+      border: 1px solid #c5e1a5;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .bono-saldo-label { font-size: 11px; color: #558b2f; font-weight: 600; }
+    .bono-saldo-valor { font-size: 20px; font-weight: 800; color: #33691e; }
+    .bono-saldo-nombre { font-size: 12px; color: #888; margin-top: 2px; }
+
+    .btn-completar-pago {
+      display: none;
+      width: 100%;
+      padding: 13px;
+      background: #1565c0;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-completar-pago:hover { background: #0d47a1; }
+
+    /* ── Panel derecho: resumen ── */
+    .resumen {
+      background: white;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 20px;
+    }
+    .resumen-titulo { font-size: 15px; font-weight: 700; margin-bottom: 18px; color: #1a1a2e; }
+
+    .resumen-producto {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .resumen-img {
+      width: 64px; height: 64px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .resumen-nombre { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .resumen-variante { font-size: 12px; color: #999; margin-bottom: 8px; }
+    .resumen-precio { font-size: 15px; font-weight: 700; color: #2e7d32; }
+
+    .resumen-linea {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 13px;
+      color: #555;
+      border-bottom: 1px dashed #f0f0f0;
+    }
+    .resumen-linea:last-child { border-bottom: none; }
+    .resumen-total {
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 0 0;
+      margin-top: 4px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+    .resumen-seguro {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #aaa;
+    }
+    .resumen-seguro span { font-size: 16px; }
+
+    /* ── Recibo modal ── */
+    .recibo-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .recibo-overlay.visible { display: flex; }
+    .recibo {
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .recibo-header {
+      background: linear-gradient(135deg, #2e7d32, #43a047);
+      color: white;
+      padding: 28px 24px 22px;
+      text-align: center;
+    }
+    .recibo-icono {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      font-size: 30px;
+    }
+    .recibo-titulo { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .recibo-subtitulo { font-size: 12px; opacity: 0.85; }
+    .recibo-body { padding: 20px 24px; }
+    .recibo-fila {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px dashed #e0e0e0;
+      gap: 12px;
+    }
+    .recibo-fila:last-child { border-bottom: none; }
+    .recibo-key { font-size: 12px; color: #888; font-weight: 500; flex-shrink: 0; }
+    .recibo-val { font-size: 13px; color: #1a1a2e; font-weight: 600; text-align: right; }
+    .recibo-val.grande { font-size: 17px; color: #2e7d32; font-weight: 800; }
+    .recibo-val.codigo { font-family: monospace; background: #f5f5f5; padding: 2px 8px; border-radius: 6px; }
+    .recibo-acciones { padding: 0 24px 20px; display: flex; gap: 10px; }
+    .btn-imprimir {
+      flex: 1; padding: 12px; background: #1565c0; color: white;
+      border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-cerrar-rec {
+      flex: 1; padding: 12px; background: #f5f5f5; color: #333;
+      border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Donación modal */
+    .donacion-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      z-index: 200; align-items: center; justify-content: center; padding: 20px;
+    }
+    .donacion-overlay.visible { display: flex; }
+    .donacion-card {
+      background: white; border-radius: 20px; width: 100%; max-width: 380px;
+      overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      animation: popIn 0.35s ease; text-align: center;
+    }
+    .donacion-imagen { width: 100%; height: 200px; object-fit: cover; display: block; }
+    .donacion-cuerpo { padding: 24px 22px 22px; }
+    .donacion-emoji { font-size: 44px; margin-bottom: 10px; display: block; }
+    .donacion-titulo { font-size: 18px; font-weight: 800; color: #1a1a2e; margin-bottom: 12px; }
+    .donacion-mensaje { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 16px; }
+    .donacion-monto {
+      display: inline-block; background: #e8f5e9; color: #2e7d32;
+      font-size: 15px; font-weight: 700; padding: 6px 18px;
+      border-radius: 30px; margin-bottom: 20px;
+    }
+    .btn-don-cerrar {
+      width: 100%; padding: 13px; background: #e53935; color: white;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+
+    /* Recibo donacion */
+    .recibo-donacion {
+      display: none; margin: 0 24px 16px; padding: 12px 14px;
+      background: #fff3e0; border: 1px solid #ffcc80; border-radius: 10px; text-align: center;
+    }
+    .recibo-donacion p { font-size: 12px; color: #e65100; margin-bottom: 10px; line-height: 1.4; }
+    .recibo-donacion button {
+      padding: 9px 18px; background: #e53935; color: white;
+      border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    @media print {
+      body { background: white; }
+      .recibo-overlay { position: static; background: none; display: block !important; }
+      .recibo { box-shadow: none; max-width: 100%; border-radius: 0; }
+      .recibo-acciones, .recibo-donacion, .checkout-layout, .header, .breadcrumb { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">Aventuras <span>del Bosque</span></div>
+    <div class="secure-badge">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+      Pago seguro
+    </div>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="#" style="color:#aaa;text-decoration:none;">Carrito</a>
+    <span class="sep">›</span>
+    <a href="#" style="color:#aaa;text-decoration:none;">Información</a>
+    <span class="sep">›</span>
+    <span>Pago</span>
+  </div>
+
+  <div class="checkout-layout">
+
+    <!-- Columna izquierda -->
+    <div>
+
+      <!-- Información de contacto -->
+      <div class="section">
+        <div class="section-title"><span class="step">1</span> Información de contacto</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" value="Juan" />
+          </div>
+          <div class="form-group">
+            <label>Apellido</label>
+            <input type="text" value="Pérez" />
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" value="juan.perez@email.com" />
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" value="+57 300 123 4567" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Método de pago -->
+      <div class="section">
+        <div class="section-title"><span class="step">2</span> Método de pago</div>
+        <div class="metodos">
+
+          <!-- Tarjeta -->
+          <div class="metodo-item" id="met-tarjeta" onclick="seleccionar('tarjeta')">
+            <div class="metodo-header">
+              <div class="metodo-radio"></div>
+              <div class="metodo-logo tarjeta">
+                <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
+                  <rect width="28" height="20" rx="4" fill="#e8eaf6"/>
+                  <rect y="5" width="28" height="5" fill="#9fa8da"/>
+                  <rect x="4" y="13" width="8" height="2" rx="1" fill="#9fa8da"/>
+                </svg>
+              </div>
+              <div class="metodo-info">
+                <div class="metodo-nombre">Tarjeta de crédito / débito</div>
+                <div class="metodo-desc">Visa, Mastercard, American Express</div>
+              </div>
+              <div class="metodo-badges">
+                <span class="badge-card">VISA</span>
+                <span class="badge-card">MC</span>
+              </div>
+            </div>
+            <div class="metodo-body">
+              <div class="tarjeta-form">
+                <input type="text" placeholder="Número de tarjeta" maxlength="19" />
+                <input type="text" placeholder="Nombre en la tarjeta" />
+                <div class="tarjeta-row">
+                  <input type="text" placeholder="MM / AA" maxlength="7" />
+                  <input type="text" placeholder="CVV" maxlength="4" />
+                </div>
+                <button onclick="alert('Procesando con tarjeta...')" style="padding:12px;background:#1565c0;color:white;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#0d47a1'" onmouseout="this.style.background='#1565c0'">
+                  Pagar $85.000 COP
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mercado Pago -->
+          <div class="metodo-item" id="met-mp" onclick="seleccionar('mp')">
+            <div class="metodo-header">
+              <div class="metodo-radio"></div>
+              <div class="metodo-logo mp">MP</div>
+              <div class="metodo-info">
+                <div class="metodo-nombre">Mercado Pago</div>
+                <div class="metodo-desc">Paga con tu cuenta o en cuotas</div>
+              </div>
+            </div>
+            <div class="metodo-body">
+              <div class="mp-content">
+                <div class="mp-logo-grande">mercadopago</div>
+                <p>Serás redirigido a Mercado Pago para completar tu pago de forma segura.</p>
+                <button class="mp-btn" onclick="alert('Redirigiendo a Mercado Pago...')">Continuar con Mercado Pago</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bono de regalo -->
+          <div class="metodo-item activo" id="met-bono" onclick="seleccionar('bono')">
+            <div class="metodo-header">
+              <div class="metodo-radio"></div>
+              <div class="metodo-logo bono">🎁</div>
+              <div class="metodo-info">
+                <div class="metodo-nombre">Bono de regalo</div>
+                <div class="metodo-desc">Canjea tu bono y paga al instante</div>
+              </div>
+            </div>
+            <div class="metodo-body" onclick="event.stopPropagation()">
+              <div class="bono-inline">
+                <div class="bono-intro">
+                  <span class="icono">🎁</span>
+                  Ingresa el código de tu bono para validar tu saldo
+                </div>
+                <div class="bono-input-row">
+                  <input type="text" id="bono-codigo" placeholder="Ej: BONO001" />
+                  <button onclick="validarBono()">Validar</button>
+                </div>
+                <div class="bono-alerta" id="bono-alerta"></div>
+                <div class="bono-saldo-box" id="bono-saldo-box">
+                  <div class="bono-saldo-label">Saldo disponible</div>
+                  <div class="bono-saldo-valor" id="bono-saldo-valor"></div>
+                  <div class="bono-saldo-nombre" id="bono-saldo-nombre"></div>
+                </div>
+                <button class="btn-completar-pago" id="btn-completar" onclick="pagarConBono()">
+                  Completar pago — $85.000 COP
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Columna derecha: resumen del pedido -->
+    <div class="resumen">
+      <div class="resumen-titulo">Resumen del pedido</div>
+
+      <div class="resumen-producto">
+        <img class="resumen-img" src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=200" alt="Rapel" />
+        <div>
+          <div class="resumen-nombre">Rapel en Cascada del Bosque</div>
+          <div class="resumen-variante">Aventura para 1 persona · Fecha flexible</div>
+          <div class="resumen-precio">$85.000 COP</div>
+        </div>
+      </div>
+
+      <div class="resumen-linea">
+        <span>Subtotal</span>
+        <span>$85.000</span>
+      </div>
+      <div class="resumen-linea">
+        <span>Envío</span>
+        <span style="color:#2e7d32;font-weight:600;">Gratis</span>
+      </div>
+      <div class="resumen-linea">
+        <span>Descuento</span>
+        <span>$0</span>
+      </div>
+      <div class="resumen-total">
+        <span>Total</span>
+        <span>$85.000 COP</span>
+      </div>
+
+      <div class="resumen-seguro">
+        <span>🔒</span>
+        Transacciones protegidas con cifrado SSL de 256 bits
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal comprobante -->
+  <div class="recibo-overlay" id="recibo-overlay">
+    <div class="recibo">
+      <div class="recibo-header">
+        <div class="recibo-icono">✓</div>
+        <div class="recibo-titulo">¡Redención exitosa!</div>
+        <div class="recibo-subtitulo">Tu pago fue procesado correctamente</div>
+      </div>
+      <div class="recibo-body">
+        <div class="recibo-fila">
+          <span class="recibo-key">Producto</span>
+          <span class="recibo-val">Rapel en Cascada del Bosque</span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Valor pagado</span>
+          <span class="recibo-val grande" id="rec-valor"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Código del bono</span>
+          <span class="recibo-val codigo" id="rec-codigo"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Fecha y hora</span>
+          <span class="recibo-val" id="rec-fecha"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">Saldo restante</span>
+          <span class="recibo-val" id="rec-saldo"></span>
+        </div>
+        <div class="recibo-fila">
+          <span class="recibo-key">N.° transacción</span>
+          <span class="recibo-val codigo" id="rec-transaccion"></span>
+        </div>
+      </div>
+      <div class="recibo-donacion" id="recibo-donacion">
+        <p>🐾 Tu saldo restante es menor a $15.000. ¿Quieres donarlo a un refugio de perritos?</p>
+        <button onclick="donarBono()">Sí, donar al refugio</button>
+      </div>
+      <div class="recibo-acciones">
+        <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir / Guardar</button>
+        <button class="btn-cerrar-rec" onclick="cerrarRecibo()">Ver mi orden →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal donación -->
+  <div class="donacion-overlay" id="donacion-overlay">
+    <div class="donacion-card">
+      <img class="donacion-imagen" src="https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600" alt="Perritos en refugio" />
+      <div class="donacion-cuerpo">
+        <span class="donacion-emoji">🐾</span>
+        <div class="donacion-titulo">¡Muchas gracias!</div>
+        <p class="donacion-mensaje">Tu aporte nos ayuda a darle una patica a los refugios que necesitan cubrir sus gastos veterinarios y de alimentación.</p>
+        <div class="donacion-monto" id="don-monto"></div>
+        <button class="btn-don-cerrar" onclick="cerrarDonacion()">Ver mi orden →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRECIO = 85000;
+    let codigoActual = "";
+    let txnData = {};
+
+    function seleccionar(metodo) {
+      document.querySelectorAll('.metodo-item').forEach(el => el.classList.remove('activo'));
+      document.getElementById('met-' + metodo).classList.add('activo');
+    }
+
+    function mostrarBonoAlerta(msg, tipo, txn) {
+      const el = document.getElementById("bono-alerta");
+      el.innerHTML = msg;
+      if (txn) el.innerHTML += `<span class="txn-ref">Ref. transacción: ${txn}</span>`;
+      el.className = "bono-alerta " + tipo;
+      el.style.display = "block";
+    }
+
+    function ocultarBonoAlerta() {
+      document.getElementById("bono-alerta").style.display = "none";
+    }
+
+    function mostrarBonoSaldo(saldo, nombre) {
+      document.getElementById("bono-saldo-valor").textContent = "$" + saldo.toLocaleString("es-CO");
+      document.getElementById("bono-saldo-nombre").textContent = "Titular: " + nombre;
+      document.getElementById("bono-saldo-box").style.display = "block";
+    }
+
+    function formatearFecha() {
+      const ahora = new Date();
+      return ahora.toLocaleDateString("es-CO", { day:"2-digit", month:"long", year:"numeric" })
+           + " — " + ahora.toLocaleTimeString("es-CO", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
+    }
+
+    async function validarBono() {
+      const codigo = document.getElementById("bono-codigo").value.trim();
+      if (!codigo) { mostrarBonoAlerta("Por favor ingresa un código.", "error"); return; }
+      ocultarBonoAlerta();
+      document.getElementById("btn-completar").style.display = "none";
+      document.getElementById("bono-saldo-box").style.display = "none";
+
+      const res = await fetch("/validar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        codigoActual = data.codigo;
+        mostrarBonoSaldo(data.saldo, data.nombre);
+        if (data.saldo < PRECIO) {
+          const falta = PRECIO - data.saldo;
+          mostrarBonoAlerta(`Saldo insuficiente. Te faltan $${falta.toLocaleString("es-CO")} COP.`, "error");
+        } else {
+          ocultarBonoAlerta();
+          document.getElementById("btn-completar").style.display = "block";
+        }
+      } else {
+        mostrarBonoAlerta(data.mensaje, "error");
+      }
+    }
+
+    async function pagarConBono() {
+      const res = await fetch("/pagar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: codigoActual, valor: PRECIO })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        document.getElementById("btn-completar").style.display = "none";
+        document.getElementById("bono-saldo-box").style.display = "none";
+        ocultarBonoAlerta();
+
+        txnData = {
+          txn:   data.num_transaccion || "",
+          saldo: data.nuevo_saldo,
+          ts:    Date.now(),
+          donable: data.vuelto_donable
+        };
+
+        document.getElementById("rec-valor").textContent       = "$" + PRECIO.toLocaleString("es-CO") + " COP";
+        document.getElementById("rec-codigo").textContent      = codigoActual;
+        document.getElementById("rec-fecha").textContent       = formatearFecha();
+        document.getElementById("rec-saldo").textContent       = "$" + data.nuevo_saldo.toLocaleString("es-CO") + " COP";
+        document.getElementById("rec-transaccion").textContent = data.num_transaccion || "—";
+        document.getElementById("recibo-donacion").style.display = data.vuelto_donable ? "block" : "none";
+        document.getElementById("recibo-overlay").classList.add("visible");
+      } else {
+        mostrarBonoAlerta(data.mensaje, "error", data.num_transaccion);
+      }
+    }
+
+    async function donarBono() {
+      const res = await fetch("/donar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: codigoActual })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById("recibo-donacion").style.display = "none";
+        document.getElementById("rec-saldo").textContent = "$0 COP";
+        document.getElementById("don-monto").textContent = "Donaste $" + data.monto_donado.toLocaleString("es-CO") + " COP";
+        document.getElementById("donacion-overlay").classList.add("visible");
+      }
+    }
+
+    function irAConfirmacion(donado) {
+      const params = new URLSearchParams({
+        txn:    txnData.txn   || "",
+        codigo: codigoActual  || "",
+        saldo:  txnData.saldo !== undefined ? txnData.saldo : "",
+        ts:     txnData.ts    || "",
+        donado: donado ? "1" : "0"
+      });
+      window.location.href = "/confirmacion?" + params.toString();
+    }
+
+    function cerrarRecibo() {
+      irAConfirmacion(false);
+    }
+
+    function cerrarDonacion() {
+      irAConfirmacion(true);
+    }
+
+    document.getElementById("bono-codigo").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") validarBono();
+    });
+  </script>
+
+</body>
+</html>
