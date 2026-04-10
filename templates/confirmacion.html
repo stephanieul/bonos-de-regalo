@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Orden confirmada — Aventuras del Bosque</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; color: #1a1a2e; font-size: 14px; }
+
+    /* Header */
+    .header {
+      background: white;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .logo { font-size: 18px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
+    .logo span { color: #2e7d32; }
+    .secure-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+
+    /* Steps */
+    .steps {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 20px 32px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .step-item { color: #bbb; display: flex; align-items: center; gap: 6px; }
+    .step-item.done { color: #4CAF50; }
+    .step-item.active { color: #1a1a2e; font-weight: 700; }
+    .step-item .dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      background: #e0e0e0; color: #999;
+    }
+    .step-item.done .dot { background: #4CAF50; color: white; }
+    .step-item.active .dot { background: #1a1a2e; color: white; }
+    .step-sep { color: #ccc; font-size: 16px; }
+
+    /* Main */
+    .main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 32px 32px 60px;
+    }
+
+    /* Banner de éxito */
+    .banner {
+      background: linear-gradient(135deg, #2e7d32, #43a047);
+      border-radius: 18px;
+      padding: 36px 32px;
+      text-align: center;
+      color: white;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .banner::before {
+      content: '🌿';
+      position: absolute;
+      font-size: 120px;
+      opacity: 0.08;
+      right: -20px;
+      top: -20px;
+    }
+    .banner-check {
+      width: 72px; height: 72px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 18px;
+    }
+    .banner h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+    .banner p { font-size: 14px; opacity: 0.9; line-height: 1.5; }
+    .orden-num {
+      display: inline-block;
+      margin-top: 16px;
+      background: rgba(255,255,255,0.2);
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* Grid de tarjetas */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .main { padding: 24px 16px 40px; } .header { padding: 0 16px; } .steps { padding: 16px 16px 0; } }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    /* Producto */
+    .producto-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .producto-img {
+      width: 70px; height: 70px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .producto-nombre { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .producto-variante { font-size: 12px; color: #999; margin-bottom: 8px; }
+    .producto-precio { font-size: 18px; font-weight: 800; color: #2e7d32; }
+
+    /* Detalles de la transacción */
+    .detalle-fila {
+      display: flex;
+      justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 13px;
+    }
+    .detalle-fila:last-child { border-bottom: none; }
+    .detalle-key { color: #999; }
+    .detalle-val { font-weight: 600; color: #1a1a2e; text-align: right; font-family: monospace; font-size: 12px; }
+    .detalle-val.normal { font-family: inherit; font-size: 13px; }
+
+    /* Información del comprador */
+    .info-fila { padding: 6px 0; font-size: 13px; color: #555; display: flex; gap: 8px; }
+    .info-fila strong { color: #1a1a2e; min-width: 70px; }
+
+    /* Próximos pasos */
+    .pasos-card {
+      background: white;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .paso {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .paso:last-child { border-bottom: none; }
+    .paso-num {
+      width: 28px; height: 28px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .paso-titulo { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .paso-desc { font-size: 12px; color: #888; line-height: 1.4; }
+
+    /* Acciones */
+    .acciones {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-primario {
+      flex: 1;
+      padding: 14px 24px;
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
+    .btn-primario:hover { background: #2e3555; }
+    .btn-secundario {
+      flex: 1;
+      padding: 14px 24px;
+      background: white;
+      color: #1a1a2e;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
+    .btn-secundario:hover { border-color: #bbb; }
+
+    /* Saldo donado */
+    .donacion-banner {
+      display: none;
+      background: #fce4ec;
+      border: 1px solid #f48fb1;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #880e4f;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .donacion-banner.visible { display: flex; }
+    .donacion-banner span { font-size: 22px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">Aventuras <span>del Bosque</span></div>
+    <div class="secure-badge">🔒 Pago seguro</div>
+  </div>
+
+  <div class="steps">
+    <div class="step-item done"><div class="dot">✓</div> Carrito</div>
+    <div class="step-sep">›</div>
+    <div class="step-item done"><div class="dot">✓</div> Información</div>
+    <div class="step-sep">›</div>
+    <div class="step-item done"><div class="dot">✓</div> Pago</div>
+    <div class="step-sep">›</div>
+    <div class="step-item active"><div class="dot">4</div> Confirmación</div>
+  </div>
+
+  <div class="main">
+
+    <!-- Banner éxito -->
+    <div class="banner">
+      <div class="banner-check">✓</div>
+      <h1>¡Orden confirmada!</h1>
+      <p>Tu compra fue procesada exitosamente con un Bono de Regalo.<br/>Recibirás los detalles en tu correo electrónico.</p>
+      <div class="orden-num" id="banner-orden">Cargando...</div>
+    </div>
+
+    <!-- Producto + Transacción -->
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-title">Producto comprado</div>
+        <div class="producto-row">
+          <img class="producto-img" src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=200" alt="Rapel" />
+          <div>
+            <div class="producto-nombre">Rapel en Cascada del Bosque</div>
+            <div class="producto-variante">1 persona · Fecha flexible</div>
+            <div class="producto-precio">$85.000 COP</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Detalles de la transacción</div>
+        <div class="detalle-fila">
+          <span class="detalle-key">N.° transacción</span>
+          <span class="detalle-val" id="det-txn">—</span>
+        </div>
+        <div class="detalle-fila">
+          <span class="detalle-key">Código del bono</span>
+          <span class="detalle-val" id="det-codigo">—</span>
+        </div>
+        <div class="detalle-fila">
+          <span class="detalle-key">Método de pago</span>
+          <span class="detalle-val normal">🎁 Bono de regalo</span>
+        </div>
+        <div class="detalle-fila">
+          <span class="detalle-key">Valor pagado</span>
+          <span class="detalle-val normal" id="det-valor">—</span>
+        </div>
+        <div class="detalle-fila">
+          <span class="detalle-key">Saldo restante</span>
+          <span class="detalle-val normal" id="det-saldo">—</span>
+        </div>
+        <div class="detalle-fila">
+          <span class="detalle-key">Fecha</span>
+          <span class="detalle-val normal" id="det-fecha">—</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Información del comprador -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">Información del comprador</div>
+      <div class="info-fila"><strong>Nombre</strong> Juan Pérez</div>
+      <div class="info-fila"><strong>Correo</strong> juan.perez@email.com</div>
+      <div class="info-fila"><strong>Teléfono</strong> +57 300 123 4567</div>
+    </div>
+
+    <!-- Próximos pasos -->
+    <div class="pasos-card">
+      <div class="card-title">¿Qué sigue?</div>
+      <div class="paso">
+        <div class="paso-num">1</div>
+        <div>
+          <div class="paso-titulo">Revisa tu correo</div>
+          <div class="paso-desc">Te enviamos un resumen de la orden a juan.perez@email.com con todos los detalles.</div>
+        </div>
+      </div>
+      <div class="paso">
+        <div class="paso-num">2</div>
+        <div>
+          <div class="paso-titulo">Coordina tu aventura</div>
+          <div class="paso-desc">Nuestro equipo te contactará en las próximas 24 horas para confirmar la fecha de tu rapel.</div>
+        </div>
+      </div>
+      <div class="paso">
+        <div class="paso-num">3</div>
+        <div>
+          <div class="paso-titulo">¡Prepárate para vivir la experiencia!</div>
+          <div class="paso-desc">Llega 15 minutos antes. Incluye todo el equipo de seguridad y guía profesional.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banner donación si aplica -->
+    <div class="donacion-banner" id="don-banner">
+      <span>🐾</span>
+      <span id="don-texto"></span>
+    </div>
+
+    <!-- Acciones -->
+    <div class="acciones">
+      <a href="/" class="btn-primario">Volver a la tienda</a>
+      <a href="#" onclick="window.print()" class="btn-secundario">🖨️ Guardar / Imprimir</a>
+    </div>
+
+  </div>
+
+  <script>
+    function getParam(name) {
+      return new URLSearchParams(window.location.search).get(name) || "—";
+    }
+
+    function formatearFecha(ts) {
+      if (!ts || ts === "—") return new Date().toLocaleDateString("es-CO", { day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" });
+      return new Date(parseInt(ts)).toLocaleDateString("es-CO", { day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" });
+    }
+
+    const txn     = getParam("txn");
+    const codigo  = getParam("codigo");
+    const saldo   = getParam("saldo");
+    const donado  = getParam("donado");
+
+    document.getElementById("banner-orden").textContent  = "Orden #" + txn;
+    document.getElementById("det-txn").textContent       = txn;
+    document.getElementById("det-codigo").textContent    = codigo;
+    document.getElementById("det-valor").textContent     = "$85.000 COP";
+    document.getElementById("det-saldo").textContent     = saldo !== "—" ? "$" + parseInt(saldo).toLocaleString("es-CO") + " COP" : "—";
+    document.getElementById("det-fecha").textContent     = formatearFecha(getParam("ts"));
+
+    if (donado === "1") {
+      const banner = document.getElementById("don-banner");
+      banner.classList.add("visible");
+      document.getElementById("don-texto").textContent =
+        "¡Gracias! El saldo restante de tu bono fue donado al refugio de perritos. 🐾";
+    }
+  </script>
+
+</body>
+</html>
