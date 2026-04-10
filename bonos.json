@@ -1,0 +1,30 @@
+{
+  "BONO001": {
+    "nombre": "Juan Pérez",
+    "saldo": 100000,
+    "saldo_inicial": 100000,
+    "status": "activo",
+    "fecha_creacion": "2026-04-09"
+  },
+  "BONO002": {
+    "nombre": "María García",
+    "saldo": 90000,
+    "saldo_inicial": 90000,
+    "status": "activo",
+    "fecha_creacion": "2026-04-09"
+  },
+  "BONO003": {
+    "nombre": "Carlos López",
+    "saldo": 95000,
+    "saldo_inicial": 95000,
+    "status": "activo",
+    "fecha_creacion": "2026-04-09"
+  },
+  "BONO007": {
+    "nombre": "Marie Stephanie Useche López",
+    "saldo": 255000,
+    "saldo_inicial": 340000,
+    "status": "activo",
+    "fecha_creacion": "2026-04-10"
+  }
+}
