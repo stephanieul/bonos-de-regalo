@@ -38,16 +38,15 @@
 .breadcrumb .sep { color: #ccc; }
 
 .checkout-layout {
-  max-width: 1100px;
+  max-width: 780px;
   margin: 0 auto;
-  padding: 0 32px 60px;
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 32px;
-  align-items: start;
+  padding: 0 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
+.resumen { position: static; }
 @media (max-width: 760px) {
-  .checkout-layout { grid-template-columns: 1fr; padding: 0 16px 40px; }
   .header { padding: 0 16px; }
   .breadcrumb { padding: 14px 16px; }
 }
